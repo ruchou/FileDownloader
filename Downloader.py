@@ -86,10 +86,10 @@ def Handler(start, end, url, filename):
         fp.write(r.content)
 
 @click.command(help="It downloads the specified file with specified name")
-@click.option('-count',default=4, help="No of Threads")
+@click.option('-c',default=4, help="No of Threads")
 @click.argument('url',type=click.Path())
 @click.pass_context
-def download_file(ctx,url,count):
+def download_file(ctx,url,c):
     r = requests.head(url)
     # download file name
     local_filename = url.split('/')[-1]
@@ -103,15 +103,16 @@ def download_file(ctx,url,count):
     except:
         print("Invalid URL")
         return
-
-    part = int(file_size) / count
+    if c <=0:
+        print("number of threads must be larger than 0")
+        return
+    part = int(file_size) / c
     with open(local_filename,"wb") as fp:
         fp.write(b"\0" * file_size)
 
-    for i in range(count):
+    for i in range(c):
         start = int(part) * i
         end = start + part
-        # create a Thread with start and end locations
         t = threading.Thread(target=Handler,
                              kwargs={'start': start, 'end': end, 'url': url, 'filename': local_filename})
         t.setDaemon(True)
