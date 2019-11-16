@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
-# $ ./downloader <URL> -c nThreads
 import requests
-import sys, getopt
-import os
 import threading
 import click
 from requests.adapters import HTTPAdapter
 
-
+#utilty for download each part of files
 def Handler(start, end, url, filename):
     # specify the starting and ending of the file
     headers = {'Range': 'bytes=%d-%d' % (start, end)}
@@ -18,8 +15,8 @@ def Handler(start, end, url, filename):
     try:
         r = s.get(url, headers=headers, stream=True)
     except requests.exceptions.RequestException as e:
-        print(e)
-        exit(0)
+        click.echo(e)
+        exit(1)
 
     # open the file and write the content of the file
     with open(filename, "r+b") as fp:
@@ -27,6 +24,7 @@ def Handler(start, end, url, filename):
         var = fp.tell()
         fp.write(r.content)
 
+#file downloader
 @click.command(help="It downloads the specified file with associated name")
 @click.option('-c',default=4, help="No of Threads")
 @click.argument('url',type=click.Path())
@@ -36,10 +34,10 @@ def download_file(ctx,url,c):
     local_filename = url.split('/')[-1]
     if not local_filename :
         click.echo('Unknown file name')
-        exit(0)
+        exit(1)
     if c <= 0:
         click.echo("number of threads must be larger than 0")
-        exit(0)
+        exit(1)
 
     #Send Http head
     s = requests.Session()
@@ -49,12 +47,11 @@ def download_file(ctx,url,c):
         r = s.head(url)
         file_size = int(r.headers['content-length'])
     except requests.exceptions.RequestException as e:
-        print(e)
-        exit(0)
+        click.echo('error')
+        exit(1)
     except:
         click.echo('error')
-        exit(0)
-
+        exit(1)
     part = int(file_size) / c
     #create files
     with open(local_filename,"wb") as fp:
@@ -80,7 +77,6 @@ def download_file(ctx,url,c):
         if t is main_thread:
             continue
         t.join()
-
 
 if __name__ == '__main__':
     download_file(obj={})
